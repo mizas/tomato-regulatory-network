@@ -1,0 +1,126 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+
+```{r}
+AuxinMip <-read.csv(file = "/media/cunzac/bioinformatica/mbarrios/proyectos/katia/tarea1/Hormone_nets/AuxinMip.tsv", sep = "\t", header=F)
+
+BrassinoMip <-read.csv(file = "/media/cunzac/bioinformatica/mbarrios/proyectos/katia/tarea1/Hormone_nets/BrassinoMip.tsv", sep = "\t", header=F)
+
+MYCMip <-read.csv(file = "/media/cunzac/bioinformatica/mbarrios/proyectos/katia/tarea1/Hormone_nets/MYC2_net.tsv", sep = "\t", header=F)
+
+
+
+AuxinMip
+BrassinoMip
+MYCMip
+```
+
+
+Obtener reguladores y regulones unicos
+
+cut -f1 Hormone_nets/AuxinMip.tsv | sort | uniq > Hormone_nets/col1-AuxinMip.tsv
+cut -f3 Hormone_nets/AuxinMip.tsv | sort | uniq > Hormone_nets/col3-AuxinMip.tsv
+cut -f1 Hormone_nets/BrassinoMip.tsv | sort | uniq > Hormone_nets/col1-BrassinoMip.tsv
+cut -f3 Hormone_nets/BrassinoMip.tsv | sort | uniq > Hormone_nets/col3-BrassinoMip.tsv
+cut -f1 Hormone_nets/MYC2_net.tsv | sort | uniq > Hormone_nets/col1-MYC2_net.tsv
+cut -f3 Hormone_nets/MYC2_net.tsv | sort | uniq > Hormone_nets/col3-MYC2_net.tsv
+
+```{r}
+AuxinMipV1 <-AuxinMip %>% 
+  select(V1) %>%
+  arrange() %>%
+  unique
+
+AuxinMipV3 <-AuxinMip %>% 
+  select(V3) %>%
+  arrange() %>%
+  unique
+
+BrassinoMipV1 <-BrassinoMip %>% 
+  select(V1) %>%
+  arrange() %>%
+  unique
+
+BrassinoMipV3 <-BrassinoMip %>% 
+  select(V3) %>%
+  arrange() %>%
+  unique
+
+MYCMipV1 <-MYCMip %>% 
+  select(V1) %>%
+  arrange() %>%
+  unique
+
+MYCMipV3 <-MYCMip %>% 
+  select(V3) %>%
+  arrange() %>%
+  unique
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+aux_tomato_sano_regulador<-read.csv("../tarea3/Auxin_regulatoryNetwork_healthy.tsv", header=F, sep='\t')
+aux_tomato_sano_regulador
+
+families <- read.csv("../tarea3/Sly_TF_list.txt", header=TRUE, sep='\t') %>%
+  select(-1) %>% 
+  mutate(across(everything(), ~ str_replace(., "\\.\\d+$", "")))
+families
+
+
+
+dict_fam<-setNames(families$Family,families$Gene_ID)
+str(dict_fam)
+
+dict_fam
+
+aux_tomato_sano_regulador_fam<-aux_tomato_sano_regulador%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         estado_1 = V2,
+         regulon = V3,
+         estado_2 = V4
+         )
+aux_tomato_sano_regulador_fam
+
+
+write.table(aux_tomato_sano_regulador_fam, "../tarea3/Auxin_regulatoryNetwork_healthy_fam.tsv", 
+            sep = "\t", row.names = FALSE, col.names=TRUE, quote = FALSE)
+
+```

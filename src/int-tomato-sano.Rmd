@@ -1,0 +1,394 @@
+---
+title: "aux-tomato-sano"
+author: "Manuel Barrios"
+date: "2025-02-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+install.packages('tidyverse')
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(stringr)
+```
+```{r}
+AuxinMip <-read.csv(file = "../data/AuxinMip.tsv", sep = "\t", header=F)
+
+BrassinoMip <-read.csv(file = "../data/BrassinoMip.tsv", sep = "\t", header=F)
+
+MYCMip <-read.csv(file = "../data/MYC2_net.tsv", sep = "\t", header=F)
+
+
+AuxinMip
+BrassinoMip
+MYCMip
+```
+
+
+# Obtener reguladores y regulones unicos
+
+1. Primero se extrajó el regulador de la red de tomate comercial.
+Auxinas tomate regulador:
+>cut -f1 Hormone_nets/AuxinMip.tsv | sort | uniq
+	Solyc03g113560
+
+```{r}
+AuxinMipV1 <-AuxinMip %>% 
+  select(V1) %>%
+  arrange() %>%
+  unique
+
+AuxinMipV3 <-AuxinMip %>% 
+  select(V3) %>%
+  arrange() %>%
+  unique
+
+BrassinoMipV1 <-BrassinoMip %>% 
+  select(V1) %>%
+  arrange() %>%
+  unique
+
+BrassinoMipV3 <-BrassinoMip %>% 
+  select(V3) %>%
+  arrange() %>%
+  unique
+
+MYCMipV1 <-MYCMip %>% 
+  select(V1) %>%
+  arrange() %>%
+  unique
+
+MYCMipV3 <-MYCMip %>% 
+  select(V3) %>%
+  arrange() %>%
+  unique
+
+```
+
+# buscar ortologo en el archivo de Penelli
+>grep -e Solyc01g098650 -e Solyc02g068280 -e Solyc02g080940 -e Solyc05g055220 -e Solyc06g007910 -e Solyc07g052430 \
+	-e Solyc07g064500 -e Solyc08g083240 -e Solyc09g005310 -e Solyc09g082650 -e Solyc09g098030 -e Solyc12g015770 HormoneOrthologs.txt | grep Pennelli > int-files/aux_regulados_ortologos.tsv
+
+```{r}
+AuxinMipV1
+```
+
+
+```{r}
+
+
+
+
+```
+
+
+
+
+```{r}
+orthologs <- readLines("../data/HormoneOrthologs.txt")
+
+Auxin_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(AuxinMipV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(AuxinMipV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos")
+}
+
+
+Auxin_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(AuxinMipV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(AuxinMipV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos")
+}
+
+Brassino_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(BrassinoMipV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(BrassinoMipV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos")
+}
+  
+Brassino_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(BrassinoMipV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(BrassinoMipV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos")
+}
+  
+MYC_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(MYCMipV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(MYCMipV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos")
+}
+
+MYC_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(MYCMipV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(MYCMipV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos")
+}
+```
+
+
+
+
+```{r}
+Auxin_regulador_pennelli
+Auxin_regulado_pennelli
+Brassino_regulador_pennelli
+Brassino_regulado_pennelli
+MYC_regulador_pennelli
+MYC_regulado_pennelli
+```
+
+## A partir de aca falta incluir a AUX, MYC
+# 3. Después en la red de regulación de pennelli se buscaron los genes que son regulados por los ortologos
+
+```{r}
+
+regulacion <- read.delim("../data/regulation_TomatoPennelli.txt", header = FALSE, stringsAsFactors = FALSE)
+
+
+# 1.1 Auxin_regulador_pennelli no tiene ortologos 
+
+# 1.2 Auxin_regulado_pennelli
+
+Auxin_regulado_pennelli_c2<-Auxin_regulado_pennelli %>%
+  pull(2) %>% 
+  unique()
+aux_regulados_regulacion <- data.frame()
+for (gen in Auxin_regulado_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    aux_regulados_regulacion <- rbind(aux_regulados_regulacion, filas_coincidentes)
+  }
+}
+
+# 2.1 Brassino regulador
+
+Brassino_regulador_pennelli_c2<-Brassino_regulador_pennelli %>%
+  pull(2) %>% 
+  unique()
+bra_regulados_regulacion <- data.frame()
+for (gen in Brassino_regulador_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    bra_regulados_regulacion <- rbind(bra_regulados_regulacion, filas_coincidentes)
+  }
+}
+
+# 3.1 MYC regulador
+
+MYC_regulador_pennelli_c2<-MYC_regulador_pennelli %>%
+  pull(2) %>% 
+  unique()
+MYC_regulados_regulacion <- data.frame()
+for (gen in MYC_regulador_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    MYC_regulados_regulacion <- rbind(bra_regulados_regulacion, filas_coincidentes)
+  }
+}
+
+```
+
+
+```{r}
+families<-read.csv("../data/Spe_TF_list.txt", header=TRUE, sep='\t') %>%
+  select(-1)
+families
+
+dict_fam<-setNames(families$Family,families$Gene_ID)
+str(dict_fam)
+
+aux_pennelli_regs<-aux_regulados_regulacion
+bra_pennelli_regs<-bra_regulados_regulacion
+MYC_pennelli_regs<-MYC_regulados_regulacion
+
+aux_pennelli_regs_fam<-aux_pennelli_regs%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulacion = V2,
+         regulon = V3,
+         especie = V4,
+         type = V5
+         )
+write.table(aux_pennelli_regs_fam, "../output-files/aux-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+bra_pennelli_regs_fam<-bra_pennelli_regs%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulacion = V2,
+         regulon = V3,
+         especie = V4,
+         type = V5
+         )
+write.table(bra_pennelli_regs_fam, "../output-files/bra-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+MYC_pennelli_regs_fam<-MYC_pennelli_regs%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulacion = V2,
+         regulon = V3,
+         especie = V4,
+         type = V5
+         )
+write.table(MYC_pennelli_regs_fam, "../output-files/MYC-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+aux_pennelli_regs_fam
+bra_pennelli_regs_fam
+MYC_pennelli_regs_fam
+
+```
+
+# 4. Identificar genes que no tienen ortologo en tomate
+```{r}
+
+```
+
+# 5. Construir las redes networkx
+
+```{r}
+library(reticulate)
+use_condaenv("solnetworks", required = TRUE)
+py_config()
+```
+
+```{python}
+
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import pandas as pd
+import matplotlib.colors as mcolors
+import pylab
+
+# Read the file with three columns
+#df = pd.read_csv('/media/cunzac/disk/katia/tarea1/salida-pennelli-auxina/auxinas-regulados-regulacion.tsv', delimiter="\t", header=0, usecols=[0, 2, 5])
+#df = df[df['bhlh_regulador']== 'bhlh']
+
+df=aux_regulados_regulacion
+
+G=nx.Graph()
+G = nx.from_pandas_edgelist(df, source="regulador", target="regulado")
+
+# Determine which nodes are "regulado" (in column 2)
+regulado_nodes = set(df['regulador'])
+
+# Assign colors: red for regulado nodes, lightblue for others
+node_colors = []
+for node in G.nodes():
+    if node in regulado_nodes:
+        node_colors.append('red')  # "regulado" nodes in red
+    else:
+        node_colors.append('lightblue')  # All others in lightblue
+
+# Draw the graph with customized node colors
+nx.draw_spring(G, with_labels=True, node_size=250, node_color=node_colors, edge_color='gray', font_size=5)
+
+# Show the plot
+#plt.savefig('/auxinas-regulados-regulacion.png', dpi=300)  
+plt.show()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+aux_tomato_sano_regulador<-read.csv("../tarea3/Auxin_regulatoryNetwork_healthy.tsv", header=F, sep='\t')
+aux_tomato_sano_regulador
+
+families <- read.csv("../tarea3/Sly_TF_list.txt", header=TRUE, sep='\t') %>%
+  select(-1) %>% 
+  mutate(across(everything(), ~ str_replace(., "\\.\\d+$", "")))
+families
+
+
+
+dict_fam<-setNames(families$Family,families$Gene_ID)
+str(dict_fam)
+
+dict_fam
+
+aux_tomato_sano_regulador_fam<-aux_tomato_sano_regulador%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         estado_1 = V2,
+         regulon = V3,
+         estado_2 = V4
+         )
+aux_tomato_sano_regulador_fam
+
+
+write.table(aux_tomato_sano_regulador_fam, "../tarea3/Auxin_regulatoryNetwork_healthy_fam.tsv", 
+            sep = "\t", row.names = FALSE, col.names=TRUE, quote = FALSE)
+
+```
+

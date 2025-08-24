@@ -1,0 +1,9 @@
+regulador	regulacion	regulon	especie	type	FT
+Sopen01g037760	regulates	Sopen05g003170	Solanum pennellii	motif	MIKC_MADS
+Sopen02g025760	regulates	Sopen05g003170	Solanum pennellii	motif	TALE
+Sopen02g034910	regulates	Sopen05g003170	Solanum pennellii	motif	Dof
+Sopen04g003530	regulates	Sopen05g003170	Solanum pennellii	motif	BBR-BPC
+Sopen04g034790	regulates	Sopen05g003170	Solanum pennellii	motif	BBR-BPC
+Sopen06g016040	regulates	Sopen05g003170	Solanum pennellii	motif	ERF
+Sopen11g006040	regulates	Sopen05g003170	Solanum pennellii	motif	GRAS
+Sopen12g034010	regulates	Sopen05g003170	Solanum pennellii	motif	CAMTA

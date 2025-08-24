@@ -1,0 +1,33 @@
+Solyc01g090560.2	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	FunTFBS, motif, motif_CE
+Solyc02g037530.2	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	motif
+Solyc02g087920.2	0	regulates	Solyc03g116060.2	1	Solanum lycopersicum	motif
+Solyc02g090220.2	0	regulates	Solyc02g088390.2	1	Solanum lycopersicum	motif
+Solyc03g111590.2	0	regulates	Solyc03g116060.2	1	Solanum lycopersicum	motif
+Solyc03g111590.2	0	regulates	Solyc11g008680.1	1	Solanum lycopersicum	motif, motif_CE
+Solyc03g114720.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc03g118290.2	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	motif
+Solyc04g005280.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc04g008380.2	0	regulates	Solyc11g008680.1	1	Solanum lycopersicum	motif
+Solyc04g077210.2	0	regulates	Solyc11g008680.1	1	Solanum lycopersicum	motif
+Solyc04g077480.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc04g078640.1	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	FunTFBS, motif, motif_CE
+Solyc04g081170.2	0	regulates	Solyc11g008680.1	1	Solanum lycopersicum	motif
+Solyc04g081170.2	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	motif
+Solyc04g081240.2	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	motif
+Solyc05g006650.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc06g008030.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc06g035700.1	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	motif
+Solyc06g050520.1	0	regulates	Solyc11g008680.1	1	Solanum lycopersicum	motif
+Solyc06g062520.1	0	regulates	Solyc02g088390.2	1	Solanum lycopersicum	motif
+Solyc07g045030.2	0	regulates	Solyc03g116060.2	1	Solanum lycopersicum	motif
+Solyc08g062490.2	0	regulates	Solyc02g088390.2	1	Solanum lycopersicum	motif
+Solyc08g080540.2	0	regulates	Solyc01g101240.2	1	Solanum lycopersicum	motif
+Solyc09g057710.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc09g063010.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc09g089870.2	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc10g081350.1	0	regulates	Solyc01g101240.2	1	Solanum lycopersicum	motif
+Solyc11g008560.1	0	regulates	Solyc02g088390.2	1	Solanum lycopersicum	motif
+Solyc11g008560.1	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif
+Solyc11g011260.1	0	regulates	Solyc11g008680.1	1	Solanum lycopersicum	motif
+Solyc11g012980.1	0	regulates	Solyc11g011020.1	1	Solanum lycopersicum	FunTFBS, motif
+Solyc12g007180.1	0	regulates	Solyc09g008840.2	1	Solanum lycopersicum	motif, motif_CE
