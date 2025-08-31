@@ -1,0 +1,884 @@
+---
+title: "aux-tomato-sano"
+author: "Manuel Barrios"
+date: "2025-02-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(stringr)
+```
+
+
+
+```{r}
+abaMtr <-read.csv(file = "../data_2/ABI5-ABA-Solyc06g060490.2.txt", sep = "\t", header=F)
+ap2Mtr <-read.csv(file = "../data_2/AP2-ETH-Solyc02g093130.1.txt", sep = "\t", header=F)
+erfMtr <-read.csv(file = "../data_2/ERF_C_5-ETH-Solyc02g077370.1.txt", sep = "\t", header=F)
+nacMtr <-read.csv(file = "../data_2/NAC-AUX-Solyc04g009440.2.txt", sep = "\t", header=F)
+mycMtr <-read.csv(file = "../data_2/MYC2-JA-Solyc08g076930.1.txt", sep = "\t", header=F)
+
+regulationPennelli <- read.csv(file = "../data_2/TomatoPennelli_regulation.txt", sep = "\t", header=F) %>%
+  rename(regulador = V1, regulado = V3, especie = V4)
+
+regulationLycopersicum <- read.csv(file = "../data_2/Tomato_regulation.txt", sep = "\t", header=F) %>%
+  rename(regulador = V1, regulado = V3, especie = V4)
+regulationLycopersicum$regulador<-sub("\\.\\d+$", "", regulationLycopersicum$regulador)
+regulationLycopersicum$regulado<-sub("\\.\\d+$", "", regulationLycopersicum$regulado)
+
+ortologs <- read.csv(file='../data/orthologs_sinPunto.tsv',sep = '\t', header=T)
+```
+
+
+
+
+# Graficar las redes para cada mtr
+
+```{r}
+Sys.setenv(RETICULATE_PYTHON="/home/cunzac/miniconda3/envs/solnetworks/bin/python")
+Sys.setenv(RETICULATE_PYTHON_FALLBACK="0")
+library(reticulate)
+py_config()
+```
+
+```{python}
+import os
+
+# tomar el working dir de R y usarlo en Python
+wd = r.getwd()           # <- función correcta de R
+os.chdir(wd)
+print("Python cwd:", os.getcwd())
+```
+
+```{python}
+import pandas as pd
+import networkx as nx
+import matplotlib.pyplot as plt
+import glob
+import os
+```
+
+
+```{python}
+# Crear directorio de salida si no existe
+os.makedirs('../output-images/mtrs/', exist_ok=True)
+
+# Establecer codigo de colores
+colores_reguladores = {
+    'ABI5-ABA-Solyc06g060490.2.txt': "red",  
+    'AP2-ETH-Solyc02g093130.1.txt': "red",  
+    'ERF_C_5-ETH-Solyc02g077370.1.txt': "red",  
+    'MYC2-JA-Solyc08g076930.1.txt': "red",  
+    'NAC-AUX-Solyc04g009440.2.txt': "red"   
+}
+
+colores_regulados = {
+    'ABI5-ABA-Solyc06g060490.2.txt': "#FFD700",  # Dorado
+    'AP2-ETH-Solyc02g093130.1.txt': "#ADD8E6",  # Azul claro
+    'ERF_C_5-ETH-Solyc02g077370.1.txt': "#ADD8E6",  # Azul claro
+    'MYC2-JA-Solyc08g076930.1.txt': "#90EE90",  # Verde claro
+    'NAC-AUX-Solyc04g009440.2.txt': "#EE6AA7"   # Rosa
+}
+
+# Encontrar archivos automáticamente con glob
+archivos = glob.glob('../data_2/*txt')
+print(f"Archivos a procesar: {archivos}")
+
+
+for archivo in archivos:
+    try:
+        nombre_archivo = os.path.basename(archivo)
+        nombre_base = os.path.splitext(nombre_archivo)[0]
+        
+        # Leer solo las columnas necesarias (0 y 2)
+        df = pd.read_csv(archivo, delimiter="\t", header=0, usecols=[0, 2])
+        
+        # Crear grafo usando números de columna directamente
+        G = nx.DiGraph()
+        G = nx.from_pandas_edgelist(df, source=df.columns[0], target=df.columns[1], create_using=G)
+        
+        # Colores - usar la primera columna como reguladores
+        regulador_nodes = set(df.iloc[:, 0])
+        node_colors = []
+        for node in G.nodes():
+            if node in regulador_nodes:
+                color = colores_reguladores.get(nombre_archivo, 'red')
+            else:
+                color = colores_regulados.get(nombre_archivo, 'lightblue')
+            node_colors.append(color)
+        
+        # Configurar figura
+        plt.figure(figsize=(22.5, 22.5))
+        pos = nx.spring_layout(G, k=3, iterations=100, scale=2)
+        
+        # Dibujar
+        nx.draw_networkx_nodes(G, pos, node_size=400, node_color=node_colors, alpha=0.9)
+        nx.draw_networkx_edges(G, pos, edge_color='gray', arrows=True, arrowsize=12, 
+                              arrowstyle='->', width=1.2, alpha=0.7)
+        nx.draw_networkx_labels(G, pos, font_size=6)
+        
+        plt.title(f'Regulation Network - {nombre_base}', fontsize=12)
+        plt.axis('off')
+        plt.tight_layout()
+        
+        # Guardar con nombre único
+        output_path = f'../output-images/mtrs/{nombre_base}.png'
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        print(f"Gráfico guardado: {output_path}")
+        print(f"Nodos: {G.number_of_nodes()}, Aristas: {G.number_of_edges()}")
+        
+    except Exception as e:
+        print(f"Error processing {archivo}: {e}")
+
+print("\nFinished!")
+```
+
+
+# Obtener reguladores y regulones unicos
+
+1. Primero se extrajó el regulador de la red de tomate comercial.
+Auxinas tomate regulador:
+>cut -f1 Hormone_nets/AuxinMip.tsv | sort | uniq
+	Solyc03g113560
+
+abaMtr <-read.csv(file = "../data_2/ABI5-ABA-Solyc06g060490.2.txt", sep = "\t", header=F)
+ap2Mtr <-read.csv(file = "../data_2/AP2-ETH-Solyc02g093130.1.txt", sep = "\t", header=F)
+erfMtr <-read.csv(file = "../data_2/ERF_C_5-ETH-Solyc02g077370.1.txt", sep = "\t", header=F)
+nacMtr <-read.csv(file = "../data_2/NAC-AUX-Solyc04g009440.2.txt", sep = "\t", header=F)
+mycMtr <-read.csv(file = "../data_2/MYC2-JA-Solyc08g076930.1.txt", sep = "\t", header=F)
+
+
+```{r}
+abaMtrV1 <-abaMtr %>% select(V1) %>% arrange() %>% unique
+abaMtrV3 <-abaMtr %>% select(V3) %>% arrange() %>% unique
+
+ap2MtrV1 <-ap2Mtr %>% select(V1) %>% arrange() %>% unique
+ap2MtrV3 <-ap2Mtr %>% select(V3) %>% arrange() %>% unique
+
+erfMtrV1 <-erfMtr %>% select(V1) %>% arrange() %>% unique
+erfMtrV3 <-erfMtr %>% select(V3) %>% arrange() %>% unique
+
+nacMtrV1 <-nacMtr %>% select(V1) %>% arrange() %>% unique
+nacMtrV3 <-nacMtr %>% select(V3) %>% arrange() %>% unique
+
+mycMtrV1 <-mycMtr %>% select(V1) %>% arrange() %>% unique
+mycMtrV3 <-mycMtr %>% select(V3) %>% arrange() %>% unique
+```
+
+# buscar ortologo en el archivo de Penelli
+>grep -e Solyc01g098650 -e Solyc02g068280 -e Solyc02g080940 -e Solyc05g055220 -e Solyc06g007910 -e Solyc07g052430 \
+	-e Solyc07g064500 -e Solyc08g083240 -e Solyc09g005310 -e Solyc09g082650 -e Solyc09g098030 -e Solyc12g015770 HormoneOrthologs.txt | grep Pennelli > int-files/aux_regulados_ortologos.tsv
+
+```{r}
+abaMtrV1
+```
+
+```{r}
+orthologs <- readLines("../data/orthologs_sinPunto.tsv")
+
+abaMtr_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(abaMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(abaMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV1")
+}
+
+abaMtr_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(abaMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(abaMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV3")
+}
+
+##################################################
+
+ap2Mtr_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(ap2MtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(ap2MtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV1")
+}
+
+ap2Mtr_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(ap2MtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(ap2MtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV3")
+}
+
+##################################################
+
+erfMtr_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(erfMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(erfMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV1")
+}
+
+erfMtr_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(erfMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(erfMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV3")
+}
+
+##################################################
+
+nacMtr_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(nacMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(nacMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV1")
+}
+
+nacMtr_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(nacMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(nacMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV3")
+}
+
+##################################################
+
+mycMtr_regulador_pennelli<-if (length(orthologs[grepl(paste(as.character(mycMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(mycMtrV1[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV1")
+}
+
+mycMtr_regulado_pennelli<-if (length(orthologs[grepl(paste(as.character(mycMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)]) > 0) {
+  orthologs[grepl(paste(as.character(mycMtrV3[, 1]), collapse = "|"), orthologs) & 
+                        grepl("Pennelli", orthologs)] %>%
+  read.delim(
+    text = .,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE
+  )
+} else {
+  print("No se encontraron ortologos de AuxinMipV3")
+}
+```
+
+
+
+
+```{r}
+abaMtr_regulador_pennelli
+abaMtr_regulado_pennelli
+ap2Mtr_regulador_pennelli
+ap2Mtr_regulado_pennelli
+erfMtr_regulador_pennelli
+erfMtr_regulado_pennelli
+nacMtr_regulador_pennelli
+nacMtr_regulado_pennelli
+mycMtr_regulador_pennelli
+mycMtr_regulado_pennelli
+
+
+MYC_regulador_pennelli
+MYC_regulado_pennelli
+```
+
+## A partir de aca falta incluir a AUX, MYC
+# 3. Después en la red de regulación de pennelli se buscaron los genes que son regulados por los ortologos
+
+```{r}
+regulationPennelli <- read.csv(file = "../data_2/TomatoPennelli_regulation.txt", sep = "\t", header=F) %>%
+  rename(regulador = V1, regulado = V3, especie = V4)
+
+regulacion<-regulationPennelli
+
+
+# 1.1 AbaMtr_regulador_pennelli
+
+abaMtr_regulador_pennelli_c1<-abaMtr_regulador_pennelli %>%
+  pull(1) %>% 
+  unique()
+abaMtr_regulador_pennelli_c1
+
+abaMtr_regulador_regulacion <- data.frame()
+for (gen in abaMtr_regulador_pennelli_c1) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    abaMtr_regulador_regulacion <- rbind(abaMtr_regulador_regulacion, filas_coincidentes)
+  }
+}
+abaMtr_regulador_regulacion
+
+# 1.2 AbaMtr_regulado_pennelli
+
+abaMtr_regulado_pennelli_c2<-abaMtr_regulado_pennelli %>%
+  pull(2) %>% 
+  unique()
+abaMtr_regulado_pennelli_c2
+
+abaMtr_regulado_regulacion <- data.frame()
+for (gen in abaMtr_regulado_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    abaMtr_regulado_regulacion <- rbind(abaMtr_regulado_regulacion, filas_coincidentes)
+  }
+}
+abaMtr_regulado_regulacion
+
+############################################
+
+# 1.1 ap2Mtr_regulador_pennelli
+
+ap2Mtr_regulador_pennelli_c1<-ap2Mtr_regulador_pennelli %>%
+  pull(1) %>% 
+  unique()
+ap2Mtr_regulador_pennelli_c1
+
+ap2Mtr_regulador_regulacion <- data.frame()
+for (gen in ap2Mtr_regulador_pennelli_c1) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    ap2Mtr_regulador_regulacion <- rbind(ap2Mtr_regulador_regulacion, filas_coincidentes)
+  }
+}
+ap2Mtr_regulador_regulacion
+
+# 1.2 ap2Mtr_regulado_pennelli
+
+ap2Mtr_regulado_pennelli_c2<-ap2Mtr_regulado_pennelli %>%
+  pull(2) %>% 
+  unique()
+ap2Mtr_regulado_pennelli_c2
+
+ap2Mtr_regulado_regulacion <- data.frame()
+for (gen in ap2Mtr_regulado_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    ap2Mtr_regulado_regulacion <- rbind(ap2Mtr_regulado_regulacion, filas_coincidentes)
+  }
+}
+ap2Mtr_regulado_regulacion
+
+############################################
+
+
+# 1.1 erfMtr_regulador_pennelli
+
+erfMtr_regulador_pennelli_c1<-erfMtr_regulador_pennelli %>%
+  pull(1) %>% 
+  unique()
+erfMtr_regulador_pennelli_c1
+
+erfMtr_regulador_regulacion <- data.frame()
+for (gen in erfMtr_regulador_pennelli_c1) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    erfMtr_regulador_regulacion <- rbind(erfMtr_regulador_regulacion, filas_coincidentes)
+  }
+}
+erfMtr_regulador_regulacion
+
+# 1.2 erfMtr_regulado_pennelli
+
+erfMtr_regulado_pennelli_c2<-erfMtr_regulado_pennelli %>%
+  pull(2) %>% 
+  unique()
+erfMtr_regulado_pennelli_c2
+
+erfMtr_regulado_regulacion <- data.frame()
+for (gen in erfMtr_regulado_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    erfMtr_regulado_regulacion <- rbind(erfMtr_regulado_regulacion, filas_coincidentes)
+  }
+}
+erfMtr_regulado_regulacion
+
+############################################
+
+
+# 1.1 nacMtr_regulador_pennelli
+
+nacMtr_regulador_pennelli_c1<-nacMtr_regulador_pennelli %>%
+  pull(1) %>% 
+  unique()
+nacMtr_regulador_pennelli_c1
+
+nacMtr_regulador_regulacion <- data.frame()
+for (gen in nacMtr_regulador_pennelli_c1) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    nacMtr_regulador_regulacion <- rbind(nacMtr_regulador_regulacion, filas_coincidentes)
+  }
+}
+nacMtr_regulador_regulacion
+
+# 1.2 nacMtr_regulado_pennelli
+
+nacMtr_regulado_pennelli_c2<-nacMtr_regulado_pennelli %>%
+  pull(2) %>% 
+  unique()
+nacMtr_regulado_pennelli_c2
+
+nacMtr_regulado_regulacion <- data.frame()
+for (gen in nacMtr_regulado_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    nacMtr_regulado_regulacion <- rbind(nacMtr_regulado_regulacion, filas_coincidentes)
+  }
+}
+nacMtr_regulado_regulacion
+
+############################################
+
+# 1.1 mycMtr_regulador_pennelli
+
+mycMtr_regulador_pennelli_c1<-mycMtr_regulador_pennelli %>%
+  pull(1) %>% 
+  unique()
+mycMtr_regulador_pennelli_c1
+
+mycMtr_regulador_regulacion <- data.frame()
+for (gen in mycMtr_regulador_pennelli_c1) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    mycMtr_regulador_regulacion <- rbind(mycMtr_regulador_regulacion, filas_coincidentes)
+  }
+}
+mycMtr_regulador_regulacion
+
+# 1.2 mycMtr_regulado_pennelli
+
+mycMtr_regulado_pennelli_c2<-mycMtr_regulado_pennelli %>%
+  pull(2) %>% 
+  unique()
+mycMtr_regulado_pennelli_c2
+
+mycMtr_regulado_regulacion <- data.frame()
+for (gen in mycMtr_regulado_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    mycMtr_regulado_regulacion <- rbind(mycMtr_regulado_regulacion, filas_coincidentes)
+  }
+}
+mycMtr_regulado_regulacion
+```
+
+
+```{r}
+# 2.1 Brassino regulador
+
+Brassino_regulador_pennelli_c2<-Brassino_regulador_pennelli %>%
+  pull(2) %>% 
+  unique()
+bra_regulados_regulacion <- data.frame()
+for (gen in Brassino_regulador_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    bra_regulados_regulacion <- rbind(bra_regulados_regulacion, filas_coincidentes)
+  }
+}
+
+# 3.1 MYC regulador
+
+MYC_regulador_pennelli_c2<-MYC_regulador_pennelli %>%
+  pull(2) %>% 
+  unique()
+MYC_regulados_regulacion <- data.frame()
+for (gen in MYC_regulador_pennelli_c2) {
+  filas_coincidentes <- regulacion[apply(regulacion, 1, function(fila) any(grepl(gen, fila))), ]
+  if (nrow(filas_coincidentes) > 0) {
+    MYC_regulados_regulacion <- rbind(bra_regulados_regulacion, filas_coincidentes)
+  }
+}
+
+```
+
+
+```{r}
+families<-read.csv("../data/Spe_TF_list.txt", header=TRUE, sep='\t') %>%
+  select(-1)
+
+dict_fam<-setNames(families$Family,families$Gene_ID)
+
+abaMtr_pennelli_regs<-abaMtr_regulador_pennelli
+abaMtr_pennelli_regs2<-abaMtr_regulado_pennelli
+
+ap2Mtr_pennelli_regs<-ap2Mtr_regulador_pennelli
+ap2Mtr_pennelli_regs2<-ap2Mtr_regulado_pennelli
+
+erfMtr_pennelli_regs<-erfMtr_regulador_pennelli
+erfMtr_pennelli_regs2<-erfMtr_regulado_pennelli
+
+nacMtr_pennelli_regs<-nacMtr_regulador_pennelli
+nacMtr_pennelli_regs2<-nacMtr_regulado_pennelli
+
+mycMtr_pennelli_regs<-mycMtr_regulador_pennelli
+mycMtr_pennelli_regs2<-mycMtr_regulado_pennelli
+
+#bra_pennelli_regs<-bra_regulados_regulacion
+#MYC_pennelli_regs<-MYC_regulados_regulacion
+#aux_pennelli_regs<-aux_regulados_regulacion
+#bra_pennelli_regs<-bra_regulados_regulacion
+#MYC_pennelli_regs<-MYC_regulados_regulacion
+#aux_pennelli_regs<-aux_regulados_regulacion
+#bra_pennelli_regs<-bra_regulados_regulacion
+#MYC_pennelli_regs<-MYC_regulados_regulacion
+
+abaMtr_pennelli_regs_fam<-abaMtr_pennelli_regs%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(abaMtr_pennelli_regs_fam, "../output-files/abaMtr-regulador-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+abaMtr_pennelli_regs2_fam<-abaMtr_pennelli_regs2 %>%
+  mutate(FT = recode(V2, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(abaMtr_pennelli_regs2_fam, "../output-files/abaMtr-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+ap2Mtr_pennelli_regs_fam<-ap2Mtr_pennelli_regs%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(ap2Mtr_pennelli_regs_fam, "../output-files/ap2Mtr-regulador-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+ap2Mtr_pennelli_regs2_fam<-ap2Mtr_pennelli_regs2 %>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(ap2Mtr_pennelli_regs2_fam, "../output-files/ap2Mtr-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+
+erfMtr_pennelli_regs_fam<-erfMtr_pennelli_regs %>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(erfMtr_pennelli_regs_fam, "../output-files/erfMtr-regulador-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+erfMtr_pennelli_regs2_fam<-erfMtr_pennelli_regs2 %>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(erfMtr_pennelli_regs2_fam, "../output-files/erfMtr-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+nacMtr_pennelli_regs_fam<-nacMtr_pennelli_regs%>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(nacMtr_pennelli_regs_fam, "../output-files/nacMtr-regulador-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+nacMtr_pennelli_regs2_fam<-nacMtr_pennelli_regs2 %>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(nacMtr_pennelli_regs2_fam, "../output-files/nacMtr-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+mycMtr_pennelli_regs_fam<-mycMtr_pennelli_regs %>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(mycMtr_pennelli_regs_fam, "../output-files/mycMtr-regulador-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+mycMtr_pennelli_regs2_fam<-mycMtr_pennelli_regs2 %>%
+  mutate(FT = recode(V1, !!!dict_fam, .default = "none")) %>%
+  rename(regulador = V1,
+         regulon = V2,
+         especiaA = V3,
+         especieB= V4
+         )
+write.table(mycMtr_pennelli_regs2_fam, "../output-files/mycMtr-regulados-regulacion-fam.tsv", 
+            sep = "\t", row.names = FALSE, quote = FALSE)
+
+
+
+abaMtr_pennelli_regs_fam
+abaMtr_pennelli_regs2_fam
+ap2Mtr_pennelli_regs_fam
+ap2Mtr_pennelli_regs2_fam
+erfMtr_pennelli_regs_fam
+erfMtr_pennelli_regs2_fam
+nacMtr_pennelli_regs_fam
+nacMtr_pennelli_regs2_fam
+mycMtr_pennelli_regs_fam
+mycMtr_pennelli_regs2_fam
+
+```
+
+```{python}
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import pandas as pd
+import matplotlib.colors as mcolors
+import pylab
+```
+
+```{python}
+df = pd.read_csv('../output-files/abaMtr-regulados-regulacion-fam.tsv', delimiter="\t", header=0, usecols=[0, 1, 5])
+# Create directed graph
+G = nx.from_pandas_edgelist(df, source="regulador", target="regulon", create_using=nx.DiGraph())
+
+# Define regulated and regulator nodes
+regulado_nodes = sorted(set(df['regulon']))  
+regulador_nodes = sorted(set(df['regulador']))  
+regulado_nodes
+regulador_nodes
+# Set circular positions for both groups
+radius_inner = 0.5  # Radius for regulated nodes
+radius_outer = 1.5  # Radius for regulator nodes
+
+# Evenly space nodes using angles
+theta_inner = np.linspace(0, 2 * np.pi, len(regulado_nodes), endpoint=False)
+theta_outer = np.linspace(0, 2 * np.pi, len(regulador_nodes), endpoint=False)
+
+# Assign positions
+pos = {}
+
+# Inner circle (regulated)
+for i, node in enumerate(regulado_nodes):
+    pos[node] = (radius_inner * np.cos(theta_inner[i]), radius_inner * np.sin(theta_inner[i]))
+
+# Outer circle (regulators)
+for i, node in enumerate(regulador_nodes):
+    pos[node] = (radius_outer * np.cos(theta_outer[i]), radius_outer * np.sin(theta_outer[i]))
+
+# Assign colors: green for regulated, purple for regulators
+node_colors = ['#7de2bb' if node in regulado_nodes else '#c5abd2' for node in G.nodes()]
+
+# Draw graph
+plt.figure(figsize=(10, 10))  
+nx.draw(G, pos, with_labels=True, node_size=500, node_color=node_colors, 
+        edge_color='gray', font_size=6, arrows=True)
+
+# Save the plot with a high DPI
+plt.savefig('../output-images/abaMtr-regulados-regulacion-pennelli.svg', dpi=300, bbox_inches='tight')
+plt.savefig('../output-images/abaMtr-regulados-regulacion-pennelli.png', dpi=300, bbox_inches='tight')
+plt.show()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 4. Identificar genes que no tienen ortologo en tomate
+```{r}
+
+```
+
+
+
+
+
+# 5. Construir las redes networkx
+
+
+```{r}
+Sys.setenv(RETICULATE_PYTHON="/home/cunzac/miniconda3/envs/solnetworks/bin/python")
+Sys.setenv(RETICULATE_PYTHON_FALLBACK="0")
+library(reticulate)
+py_config()
+```
+
+```{python}
+import os
+
+# tomar el working dir de R y usarlo en Python
+wd = r.getwd()           # <- función correcta de R
+os.chdir(wd)
+print("Python cwd:", os.getcwd())
+```
+
+```{r}
+file_path <- file.path(getwd(), "../output-files/aux-regulados-regulacion-fam.tsv")
+file.exists(file_path)
+```
+
+```{python}
+print(file_path)  # viene de R
+df = pd.read_csv(file_path, sep="\t", usecols=[0,2,5])
+```
+
+
+
+```{python}
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+import pandas as pd
+import matplotlib.colors as mcolors
+import pylab
+
+#Read the file with three columns
+df = pd.read_csv('../output-files/MYC-regulados-regulacion-fam.tsv', delimiter="\t", header=0, usecols=[0, 2, 5])
+df
+#df = df[df['FT']== 'bHLH']
+
+
+G=nx.Graph()
+G = nx.from_pandas_edgelist(df, source="regulador", target="regulon")
+
+# Determine which nodes are "regulado" (in column 2)
+regulado_nodes = set(df['regulador'])
+
+# Assign colors: red for regulado nodes, lightblue for others
+node_colors = []
+for node in G.nodes():
+    if node in regulado_nodes:
+        node_colors.append('red')  # "regulado" nodes in red
+    else:
+        node_colors.append('lightblue')  # All others in lightblue
+
+# Draw the graph with customized node colors
+nx.draw_spring(G, with_labels=True, node_size=250, node_color=node_colors, edge_color='gray', font_size=5)
+
+# Show the plot
+plt.savefig('../output-images/prueba-myc2-regulados-regulacion.png', dpi=300)  
+plt.show()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

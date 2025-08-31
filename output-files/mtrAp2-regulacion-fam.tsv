@@ -1,0 +1,45 @@
+regulador	V2	regulado	especie	V5	FT
+Solyc01g005630	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc01g067540	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc01g090560	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc01g094360	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	MYB
+Solyc01g103050	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ARF
+Solyc02g077360	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc03g005520	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc03g093550	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc03g112430	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	LBD
+Solyc03g115940	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	Dof
+Solyc03g116100	regulates	Solyc02g093130	Solanum lycopersicum	FunTFBS, motif, motif_CE	MYB
+Solyc03g123500	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc04g008380	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	BBR-BPC
+Solyc04g074170	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	MYB
+Solyc04g077210	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	TALE
+Solyc04g077260	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	MYB
+Solyc04g078640	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc04g080910	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc04g081170	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	BBR-BPC
+Solyc05g009450	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc06g050520	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc06g051120	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	Trihelix
+Solyc06g051840	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc06g062520	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	Dof
+Solyc06g065820	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc06g082430	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	LBD
+Solyc07g054220	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc07g064890	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc08g078190	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc09g066260	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	LBD
+Solyc09g090130	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	MYB
+Solyc10g006130	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc10g009110	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc10g044680	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	MYB
+Solyc10g077110	regulates	Solyc02g093130	Solanum lycopersicum	FunTFBS, motif, motif_CE	C2H2
+Solyc10g080310	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc10g081490	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	MYB
+Solyc11g008560	regulates	Solyc02g093130	Solanum lycopersicum	FunTFBS, motif, motif_CE	AP2
+Solyc11g008830	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	LBD
+Solyc11g011260	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	GRAS
+Solyc11g012980	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc11g042580	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc11g045680	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	ERF
+Solyc12g010890	regulates	Solyc02g093130	Solanum lycopersicum	motif, motif_CE	Trihelix

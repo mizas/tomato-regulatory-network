@@ -20,9 +20,30 @@ wheels/
 .installed.cfg
 *.egg
 
+# data/
+AuxinMip.tsv
+Auxin_regulatoryNetwork_healthy.tsv
+BHLHTomatoPennelli.txt
+BHLHtomato.txt
+BrassinoMip.tsv
+Brassinos_regulatoryNetwork_healthy.tsv
+HormoneOrthologs.txt
+MYC2_net.tsv
+MYC2_regulatoryNetwork_healthy.tsv
+regulation_TomatoPennelli.txt
+
+# data_2/
+mips-myc/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints
+healthy.Rmd
+int-tomato-sano.Rmd
+mtrs-tomato-sano.html
+mtrs-tomato-sano.Rmd
+red-sana.ipynb*
+enfermo.ipynb*
 
 # R
 *.Rhistory
